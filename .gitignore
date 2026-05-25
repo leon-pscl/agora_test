@@ -1,0 +1,24 @@
+# dotenv environment variable files
+.env
+.env.*
+!.env.local.example
+
+# Next.js build output
+.next
+out
+
+# Dependency directories
+node_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+next-env.d.ts
+
+# Nested git repos (was tracked as gitlink)
+my-nextjs-demo/
+
+# OS files
+.DS_Store
+
+# Vercel
+.vercel
