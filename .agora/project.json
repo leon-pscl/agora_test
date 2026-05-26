@@ -1,0 +1,7 @@
+{
+  "projectId": "W3sJPA0oR",
+  "projectName": "Default Project",
+  "region": "global",
+  "projectType": "nextjs",
+  "envPath": "sample_project/.env.local"
+}
