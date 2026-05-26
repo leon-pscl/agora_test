@@ -4,10 +4,10 @@ import { useState, useCallback } from 'react';
 import type { RentalUnit, FAQ } from '@/types';
 import { Button } from '@/components/ui/button';
 
-const DEFAULT_FAQS: Omit<FAQ, 'question'>[] = [
-  { answer: '' },
-  { answer: '' },
-  { answer: '' },
+const DEFAULT_FAQS_DEMO: FAQ[] = [
+  { question: 'Magkano po ang renta?', answer: 'Php 4,500 per month po, exclusive ng tubig at kuryente.' },
+  { question: 'May parking po ba?', answer: 'May street parking po, pero walang designated slot.' },
+  { question: 'Pwede po bang magluto?', answer: 'Pwede po, may sariling kitchen naman ang unit.' },
 ];
 
 const SUGGESTED_QUESTIONS = [
@@ -23,16 +23,33 @@ export function UnitKnowledgeBaseEditor({ landlordId }: { landlordId: string }) 
   const [units, setUnits] = useState<RentalUnit[]>([
     {
       unit_id: 'unit-1',
-      name: '',
+      name: 'Studio Room 3B',
       type: 'apartment',
-      price: 0,
+      price: 4500,
       availability: 'available',
-      address: '',
+      address: '123 Mabini St., Brgy. Poblacion, Makati City',
+      max_occupants: 2,
+      pets_allowed: false,
+      faqs: DEFAULT_FAQS_DEMO,
+      requirements: ['1 month advance', '1 month deposit', 'Valid ID', 'Proof of employment'],
+      rules: ['No overnight visitors without notice', 'Tahimik after 10pm', 'No smoking inside the unit', 'Waste segregation required'],
+      viewing_slots: [],
+    },
+    {
+      unit_id: 'unit-2',
+      name: 'Bedspace - Room A',
+      type: 'bedspace',
+      price: 1800,
+      availability: 'available',
+      address: '123 Mabini St., Brgy. Poblacion, Makati City',
       max_occupants: 1,
       pets_allowed: false,
-      faqs: [],
-      requirements: [''],
-      rules: [''],
+      faqs: [
+        { question: 'Ilang tao po sa isang room?', answer: '4 po sa isang room, may sariling kama at locker.' },
+        { question: 'May curfew po ba?', answer: 'Wala pong curfew, pero tahimik po after 10pm.' },
+      ],
+      requirements: ['1 month advance', '1 month deposit', 'Valid ID'],
+      rules: ['No smoking', 'Tahimik after 10pm', 'No visitors after 9pm'],
       viewing_slots: [],
     },
   ]);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AgoraClient, Area } from 'agora-agent-server-sdk';
+import { AgoraClient, Area, generateConvoAIToken } from 'agora-agent-server-sdk';
 import type { UpdateAgentRequest } from '@/types';
 
 export async function POST(request: NextRequest) {
@@ -28,12 +28,26 @@ export async function POST(request: NextRequest) {
       appCertificate,
     });
 
-    // Push updated context into the running session
-    await client.updateAgent(agent_id, {
-      llm: {
-        system_messages,
-      },
+    const token = generateConvoAIToken({
+      appId,
+      appCertificate,
+      channelName: 'update',
+      account: agent_id,
     });
+
+    // Push updated context into the running session
+    await client.agents.update(
+      {
+        appid: appId,
+        agentId: agent_id,
+        properties: {
+          llm: {
+            system_messages,
+          },
+        },
+      },
+      { headers: { Authorization: `agora token=${token}` } },
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 
 type DashboardTab = 'units' | 'schedule' | 'leads' | 'transcripts' | 'notifications';
 
-export function LandlordDashboard({ landlordId }: { landlordId: string }) {
+export function LandlordDashboard({ landlordId, onTestCall }: { landlordId: string; onTestCall?: () => void }) {
   const [activeTab, setActiveTab] = useState<DashboardTab>('units');
   const [isLiveCallActive, setIsLiveCallActive] = useState(false);
 
@@ -36,9 +36,7 @@ export function LandlordDashboard({ landlordId }: { landlordId: string }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              window.location.href = '/';
-            }}
+            onClick={onTestCall}
           >
             Test Call
           </Button>

@@ -21,7 +21,7 @@ const PIPELINE_STAGES = [
 ];
 
 export function LeadPipelineView({ landlordId: _landlordId }: { landlordId: string }) {
-  const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [bookings] = useState<BookingRecord[]>([]);
 
   return (
     <div className="space-y-6">

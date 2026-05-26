@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import type { RTMClient } from 'agora-rtm';
 import type {
@@ -10,7 +10,6 @@ import type {
   AgoraRenewalTokens,
 } from '@/types';
 import { Button } from '@/components/ui/button';
-import { DEFAULT_AGENT_UID } from '@/lib/agora';
 
 const ConversationComponent = dynamic(
   () => import('./ConversationComponent'),
@@ -31,6 +30,13 @@ const AgoraProvider = dynamic(
           typeof AgoraRTC.createClient
         > | null>(null);
         if (!clientRef.current) {
+          try {
+            (AgoraRTC as typeof AgoraRTC & {
+              setParameter?: (key: string, value: unknown) => void;
+            }).setParameter?.('ENABLE_AUDIO_PTS', true);
+          } catch {
+            // Audio PTS not supported on this device
+          }
           clientRef.current = AgoraRTC.createClient({
             mode: 'rtc',
             codec: 'vp8',
@@ -109,7 +115,9 @@ export function CallInterface({ onReturnToDashboard }: CallInterfaceProps) {
             responseData.uid,
           );
           await rtm.login({ token: responseData.token });
-          await rtm.subscribe(responseData.channel);
+          await rtm.subscribe(responseData.channel, { withPresence: true });
+          // Wait for presence to stabilize before proceeding
+          await new Promise((r) => setTimeout(r, 500));
           return rtm;
         })(),
       ]);

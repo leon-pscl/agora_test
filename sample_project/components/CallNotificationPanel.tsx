@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 type LiveCallNotification = {
   id: string;
@@ -14,7 +14,7 @@ type LiveCallNotification = {
 
 export function CallNotificationPanel({
   landlordId: _landlordId,
-  onLiveCallChange,
+  onLiveCallChange: _onLiveCallChange,
 }: {
   landlordId: string;
   onLiveCallChange: (active: boolean) => void;
@@ -22,7 +22,7 @@ export function CallNotificationPanel({
   const [notifications, setNotifications] = useState<LiveCallNotification[]>(
     [],
   );
-  const [isLiveCall, setIsLiveCall] = useState(false);
+  const [isLiveCall] = useState(false);
 
   const dismissNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));

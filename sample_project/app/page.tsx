@@ -20,6 +20,7 @@ export default function Home() {
   return (
     <LandlordDashboard
       landlordId={process.env.NEXT_PUBLIC_LANDLORD_ID ?? 'default-landlord'}
+      onTestCall={() => setViewMode('call')}
     />
   );
 }

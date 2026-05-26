@@ -35,7 +35,7 @@ export function buildSystemPrompt(
   landlordName: string,
   unit: RentalUnit,
 ): string {
-  return `
+  const prompt = `
 You are ${agentName}, a helpful rental assistant for ${landlordName}'s property at ${unit.address}.
 You speak in natural Taglish — mixing Filipino and English the way Filipinos actually talk.
 You are warm, friendly, and professional. Never pretend to be human if directly asked.
@@ -44,6 +44,13 @@ ${buildUnitKnowledgeBase(unit)}
 
 ${BEHAVIOR_RULES}
 `.trim();
+
+  console.log(`[prompts] Built system prompt for "${agentName}" at ${unit.address}`);
+  console.log(`[prompts]   Unit: "${unit.name}" (${unit.type}), PHP ${unit.price}/mo`);
+  console.log(`[prompts]   FAQs: ${unit.faqs.length}, Rules: ${unit.rules.length}, Requirements: ${unit.requirements.length}`);
+  console.log(`[prompts]   Available: ${unit.availability}`);
+
+  return prompt;
 }
 
 export function buildQualificationPrompt(): string {

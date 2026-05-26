@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import fs from 'fs';
+import path from 'path';
 
 const REQUIRED_VARS = [
   'NEXT_PUBLIC_AGORA_APP_ID',
@@ -74,8 +76,6 @@ function checkFiles() {
     ['.env.local.example', 'Environment template'],
   ];
 
-  const fs = await import('fs');
-  const path = await import('path');
   const root = path.resolve(new URL('.', import.meta.url).pathname, '..');
 
   let allFound = true;
@@ -92,14 +92,18 @@ function checkFiles() {
   return allFound;
 }
 
-const envOk = checkEnv();
-const filesOk = await checkFiles();
+function main() {
+  const envOk = checkEnv();
+  const filesOk = checkFiles();
 
-console.log('');
-if (envOk && filesOk) {
-  console.log('✓ Doctor check passed.');
-  process.exit(0);
-} else {
-  console.log('✗ Doctor check failed. Review the issues above.');
-  process.exit(1);
+  console.log('');
+  if (envOk && filesOk) {
+    console.log('✓ Doctor check passed.');
+    process.exit(0);
+  } else {
+    console.log('✗ Doctor check failed. Review the issues above.');
+    process.exit(1);
+  }
 }
+
+main();

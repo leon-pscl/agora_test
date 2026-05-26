@@ -104,7 +104,7 @@ export interface AgoraRenewalTokens {
 
 export interface ConversationComponentProps {
   agoraData: AgoraTokenData;
-  rtmClient: unknown;
+  rtmClient: import('agora-rtm').RTMClient;
   onTokenWillExpire: (uid: string) => Promise<AgoraRenewalTokens>;
   onEndConversation: () => void;
 }

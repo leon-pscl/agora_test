@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { CallSessionLog } from '@/types';
 
 export function TranscriptViewer({ landlordId: _landlordId }: { landlordId: string }) {
-  const [sessions, setSessions] = useState<CallSessionLog[]>([]);
+  const [sessions] = useState<CallSessionLog[]>([]);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
 
   const getStageLabel = (stage: CallSessionLog['stage_reached']): string => {

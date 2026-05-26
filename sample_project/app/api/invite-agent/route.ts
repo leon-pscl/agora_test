@@ -7,29 +7,33 @@ import {
   ExpiresIn,
   OpenAI,
 } from 'agora-agent-server-sdk';
-import type { ClientStartRequest, AgentResponse, RentalUnit } from '@/types';
+import type { ClientStartRequest, RentalUnit } from '@/types';
 import { DEFAULT_AGENT_UID } from '@/lib/agora';
 import { buildSystemPrompt } from '@/lib/prompts';
 
 const agentUid = process.env.NEXT_PUBLIC_AGENT_UID ?? String(DEFAULT_AGENT_UID);
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
-  return value;
-}
-
 async function getLandlordUnit(landlordId: string, unitId?: string): Promise<RentalUnit | null> {
   // TODO: Replace with database lookup
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/landlords/${landlordId}`,
-  );
-  if (!response.ok) return null;
-  const landlord = await response.json();
-  if (unitId) {
-    return landlord.units.find((u: RentalUnit) => u.unit_id === unitId) ?? null;
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/api/landlords/${landlordId}`;
+  console.log(`[invite-agent] Fetching landlord data: ${url}`);
+  const response = await fetch(url);
+  if (!response.ok) {
+    console.log(`[invite-agent] Landlord ${landlordId} not found (${response.status})`);
+    return null;
   }
-  return landlord.units[0] ?? null;
+  const landlord = await response.json();
+  console.log(`[invite-agent] Landlord found: ${landlord.landlord_id}, units: ${landlord.units?.length ?? 0}`);
+
+  let unit: RentalUnit | null = null;
+  if (unitId) {
+    unit = landlord.units.find((u: RentalUnit) => u.unit_id === unitId) ?? null;
+    console.log(`[invite-agent] Requested unit ${unitId}: ${unit ? `found "${unit.name}"` : 'NOT FOUND'}`);
+  } else {
+    unit = landlord.units[0] ?? null;
+    console.log(`[invite-agent] No unit specified, using first: ${unit ? `"${unit.name}"` : 'NONE'}`);
+  }
+  return unit;
 }
 
 export async function POST(request: NextRequest) {
@@ -37,8 +41,14 @@ export async function POST(request: NextRequest) {
     const body: ClientStartRequest & { landlord_id?: string; unit_id?: string } = await request.json();
     const { requester_id, channel_name, landlord_id, unit_id } = body;
 
-    const appId = requireEnv('NEXT_PUBLIC_AGORA_APP_ID');
-    const appCertificate = requireEnv('NEXT_AGORA_APP_CERTIFICATE');
+    const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID;
+    const appCertificate = process.env.NEXT_AGORA_APP_CERTIFICATE;
+    if (!appId || !appCertificate) {
+      return NextResponse.json(
+        { error: 'Missing Agora configuration. Set NEXT_PUBLIC_AGORA_APP_ID and NEXT_AGORA_APP_CERTIFICATE.' },
+        { status: 500 },
+      );
+    }
 
     if (!channel_name || !requester_id) {
       return NextResponse.json(
@@ -47,21 +57,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let systemPrompt = '';
+    const agentName = process.env.NEXT_AGENT_NAME ?? 'Maria';
     const greeting = process.env.NEXT_AGENT_GREETING ?? 'Helo! Ako ang rental assistant. Paano po ako makatutulong?';
+    console.log(`[invite-agent] Request: landlord_id=${landlord_id ?? '(none)'}, unit_id=${unit_id ?? '(none)'}, requester=${requester_id}, channel=${channel_name}`);
+
+    let systemPrompt = '';
+    let unitInfo: RentalUnit | null = null;
 
     if (landlord_id) {
-      const unit = await getLandlordUnit(landlord_id, unit_id);
-      if (unit) {
+      unitInfo = await getLandlordUnit(landlord_id, unit_id);
+      if (unitInfo) {
         systemPrompt = buildSystemPrompt(
-          process.env.NEXT_AGENT_NAME ?? 'Maria',
+          agentName,
           'the owner',
-          unit,
+          unitInfo,
         );
       }
     }
 
     if (!systemPrompt) {
+      console.log('[invite-agent] WARNING: No landlord/unit found, using generic prompt');
       systemPrompt = `You are a helpful rental assistant for a property in the Philippines.
 You speak in natural Taglish — mixing Filipino and English the way Filipinos actually talk.
 You are warm, friendly, and professional.
@@ -70,6 +85,9 @@ Help the tenant with their inquiry about the rental unit. Answer questions about
 If you don't know something, say: "Hindi ko sigurado yan, itatanong ko sa may-ari para sa inyo."
 Never negotiate price. If asked, say the owner handles that personally.`;
     }
+
+    console.log(`[invite-agent] Agent: "${agentName}", greeting: "${greeting}"`);
+    console.log(`[invite-agent] System prompt (first 500 chars): ${systemPrompt.slice(0, 500)}...`);
 
     const client = new AgoraClient({
       area: Area.AP,
@@ -110,12 +128,12 @@ Never negotiate price. If asked, say the owner handles that personally.`;
     })
       .withStt(
         new DeepgramSTT({
+          model: 'nova-2',
           language: 'en',
         }),
       )
       .withLlm(
         new OpenAI({
-          apiKey: requireEnv('NEXT_LLM_API_KEY'),
           model: 'gpt-4o-mini',
           greetingMessage: greeting,
           failureMessage: 'Pasensya na, hindi ko masagot yan. Ipapaabot ko sa may-ari.',
@@ -143,12 +161,13 @@ Never negotiate price. If asked, say the owner handles that personally.`;
     });
 
     const agentId = await session.start();
+    console.log(`[invite-agent] Agent started successfully: ${agentId}`);
 
     return NextResponse.json({
       agent_id: agentId,
       create_ts: Math.floor(Date.now() / 1000),
       state: 'RUNNING',
-    } as AgentResponse);
+    });
   } catch (error) {
     console.error('Error starting conversation:', error);
     return NextResponse.json(

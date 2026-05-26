@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import AgoraRTC, {
+import {
   useRTCClient,
   useLocalMicrophoneTrack,
   useRemoteUsers,
@@ -9,13 +9,11 @@ import AgoraRTC, {
   useJoin,
   usePublish,
   RemoteUser,
-  UID,
 } from 'agora-rtc-react';
 import {
   AgoraVoiceAI,
   AgoraVoiceAIEvents,
   AgentState,
-  MessageSalStatus,
   TranscriptHelperMode,
   TurnStatus,
   type TranscriptHelperItem,
@@ -88,11 +86,9 @@ export default function ConversationComponent({
   const client = useRTCClient();
   const remoteUsers = useRemoteUsers();
   const [isEnabled, setIsEnabled] = useState(true);
-  const [isAgentConnected, setIsAgentConnected] = useState(false);
   const [connectionState, setConnectionState] = useState('CONNECTING');
   const agentUID =
     process.env.NEXT_PUBLIC_AGENT_UID ?? String(DEFAULT_AGENT_UID);
-  const [joinedUID, setJoinedUID] = useState<UID>(0);
   const [agentState, setAgentState] = useState<AgentState | null>(null);
   const [rawTranscript, setRawTranscript] = useState<ToolkitMessage[]>([]);
 
@@ -121,24 +117,12 @@ export default function ConversationComponent({
 
   const { localMicrophoneTrack } = useLocalMicrophoneTrack(isReady);
 
-  useEffect(() => {
-    if (!client) return;
-    try {
-      (AgoraRTC as typeof AgoraRTC & {
-        setParameter?: (key: string, value: unknown) => void;
-      }).setParameter?.('ENABLE_AUDIO_PTS', true);
-    } catch (error) {
-      console.warn('Could not set ENABLE_AUDIO_PTS:', error);
-    }
-  }, [client]);
-
-  useEffect(() => {
+  const joinedUID = useMemo(() => {
     if (joinSuccess && client) {
       const uid = client.uid;
-      if (uid !== null && uid !== undefined) {
-        setJoinedUID(uid);
-      }
+      return (uid !== null && uid !== undefined) ? uid : 0;
     }
+    return 0;
   }, [joinSuccess, client]);
 
   useEffect(() => {
@@ -189,6 +173,7 @@ export default function ConversationComponent({
         }
       } catch {}
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady, joinSuccess]);
 
   const transcript = useMemo(() => {
@@ -213,20 +198,10 @@ export default function ConversationComponent({
 
   usePublish([localMicrophoneTrack]);
 
-  useClientEvent(client, 'user-joined', (user) => {
-    if (user.uid.toString() === agentUID) setIsAgentConnected(true);
-  });
-
-  useClientEvent(client, 'user-left', (user) => {
-    if (user.uid.toString() === agentUID) setIsAgentConnected(false);
-  });
-
-  useEffect(() => {
-    const isAgentInRemoteUsers = remoteUsers.some(
-      (user) => user.uid.toString() === agentUID,
-    );
-    setIsAgentConnected(isAgentInRemoteUsers);
-  }, [remoteUsers, agentUID]);
+  const isAgentConnected = useMemo(
+    () => remoteUsers.some((user) => user.uid.toString() === agentUID),
+    [remoteUsers, agentUID],
+  );
 
   useClientEvent(client, 'connection-state-change', (curState) => {
     setConnectionState(curState);

@@ -6,6 +6,8 @@ export async function POST(request: NextRequest) {
   try {
     const body: WebhookEvent = await request.json();
 
+    console.log(`[webhook] Event: ${body.event}, session: ${body.session_id}, agent: ${body.agent_id ?? '(none)'}, payload keys: ${Object.keys(body.payload ?? {}).join(', ')}`);
+
     // Validate required fields
     if (!body.event || !body.session_id) {
       return NextResponse.json(
@@ -18,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Webhook handler error:', error);
+    console.error('[webhook] Handler error:', error);
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 },
