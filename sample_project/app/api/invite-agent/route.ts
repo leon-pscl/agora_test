@@ -9,13 +9,19 @@ import {
 } from 'agora-agent-server-sdk';
 import type { ClientStartRequest, RentalUnit } from '@/types';
 import { DEFAULT_AGENT_UID } from '@/lib/agora';
-import { buildSystemPrompt } from '@/lib/prompts';
+import { buildSystemPrompt, buildMultiUnitSystemPrompt } from '@/lib/prompts';
 
 const agentUid = process.env.NEXT_PUBLIC_AGENT_UID ?? String(DEFAULT_AGENT_UID);
 
-async function getLandlordUnit(landlordId: string, unitId?: string): Promise<RentalUnit | null> {
-  // TODO: Replace with database lookup
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/api/landlords/${landlordId}`;
+function buildApiUrl(request: NextRequest, path: string): string {
+  return new URL(path, request.url).toString();
+}
+
+async function fetchLandlord(
+  request: NextRequest,
+  landlordId: string,
+): Promise<{ landlord_id: string; units: RentalUnit[] } | null> {
+  const url = buildApiUrl(request, `/api/landlords/${landlordId}`);
   console.log(`[invite-agent] Fetching landlord data: ${url}`);
   const response = await fetch(url);
   if (!response.ok) {
@@ -24,16 +30,7 @@ async function getLandlordUnit(landlordId: string, unitId?: string): Promise<Ren
   }
   const landlord = await response.json();
   console.log(`[invite-agent] Landlord found: ${landlord.landlord_id}, units: ${landlord.units?.length ?? 0}`);
-
-  let unit: RentalUnit | null = null;
-  if (unitId) {
-    unit = landlord.units.find((u: RentalUnit) => u.unit_id === unitId) ?? null;
-    console.log(`[invite-agent] Requested unit ${unitId}: ${unit ? `found "${unit.name}"` : 'NOT FOUND'}`);
-  } else {
-    unit = landlord.units[0] ?? null;
-    console.log(`[invite-agent] No unit specified, using first: ${unit ? `"${unit.name}"` : 'NONE'}`);
-  }
-  return unit;
+  return landlord;
 }
 
 export async function POST(request: NextRequest) {
@@ -62,21 +59,25 @@ export async function POST(request: NextRequest) {
     console.log(`[invite-agent] Request: landlord_id=${landlord_id ?? '(none)'}, unit_id=${unit_id ?? '(none)'}, requester=${requester_id}, channel=${channel_name}`);
 
     let systemPrompt = '';
-    let unitInfo: RentalUnit | null = null;
 
     if (landlord_id) {
-      unitInfo = await getLandlordUnit(landlord_id, unit_id);
-      if (unitInfo) {
-        systemPrompt = buildSystemPrompt(
-          agentName,
-          'the owner',
-          unitInfo,
-        );
+      const landlord = await fetchLandlord(request, landlord_id);
+      if (landlord && landlord.units.length > 0) {
+        if (unit_id) {
+          const unit = landlord.units.find((u: RentalUnit) => u.unit_id === unit_id) ?? null;
+          console.log(`[invite-agent] Requested unit ${unit_id}: ${unit ? `found "${unit.name}"` : 'NOT FOUND'}`);
+          if (unit) {
+            systemPrompt = buildSystemPrompt(agentName, 'the owner', unit);
+          }
+        } else {
+          console.log(`[invite-agent] No unit specified, using all ${landlord.units.length} units`);
+          systemPrompt = buildMultiUnitSystemPrompt(agentName, 'the owner', landlord.units);
+        }
       }
     }
 
     if (!systemPrompt) {
-      console.log('[invite-agent] WARNING: No landlord/unit found, using generic prompt');
+      console.log('[invite-agent] WARNING: No landlord/units found, using generic prompt');
       systemPrompt = `You are a helpful rental assistant for a property in the Philippines.
 You speak in natural Taglish — mixing Filipino and English the way Filipinos actually talk.
 You are warm, friendly, and professional.
@@ -87,6 +88,8 @@ Never negotiate price. If asked, say the owner handles that personally.`;
     }
 
     console.log(`[invite-agent] Agent: "${agentName}", greeting: "${greeting}"`);
+    console.log(`[invite-agent] AI engine config: STT=Deepgram nova-2, LLM=OpenAI gpt-4o-mini, TTS=MiniMax speech_2_6_turbo`);
+    console.log(`[invite-agent] App credentials: appId=${appId.slice(0, 8)}..., certificate=${appCertificate ? appCertificate.slice(0, 4) + '...' : 'MISSING'}`);
     console.log(`[invite-agent] System prompt (first 500 chars): ${systemPrompt.slice(0, 500)}...`);
 
     const client = new AgoraClient({

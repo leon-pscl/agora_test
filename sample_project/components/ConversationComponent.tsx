@@ -82,6 +82,7 @@ export default function ConversationComponent({
   rtmClient,
   onTokenWillExpire,
   onEndConversation,
+  onTranscriptUpdate,
 }: ConversationComponentProps) {
   const client = useRTCClient();
   const remoteUsers = useRemoteUsers();
@@ -243,6 +244,20 @@ export default function ConversationComponent({
   useClientEvent(client, 'token-privilege-will-expire', handleTokenWillExpireCb);
 
   const handleEnd = useCallback(async () => {
+    if (onTranscriptUpdate) {
+      const entries = transcript
+        .filter((m) => m.text)
+        .map((m) => ({
+          turn_id: String(m.turn_id ?? Date.now()),
+          uid: String(m.uid),
+          text: typeof m.text === 'string' ? m.text : '',
+          createdAt: typeof m._time === 'number'
+            ? normalizeTimestampMs(m._time)
+            : undefined,
+        }));
+      console.log(`[ConversationComponent] Saving transcript: ${entries.length} messages`);
+      onTranscriptUpdate(entries);
+    }
     const track = localMicrophoneTrack;
     if (track) {
       try {
@@ -254,7 +269,7 @@ export default function ConversationComponent({
       } catch {}
     }
     onEndConversation();
-  }, [client, localMicrophoneTrack, onEndConversation]);
+  }, [client, localMicrophoneTrack, onEndConversation, onTranscriptUpdate, transcript, currentInProgressMessage]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

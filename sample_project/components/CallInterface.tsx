@@ -123,7 +123,11 @@ export function CallInterface({ onReturnToDashboard }: CallInterfaceProps) {
       ]);
 
       setRtmClient(rtm);
-      setAgoraData({ ...responseData, agentId: agentData?.agent_id });
+      setAgoraData({
+        ...responseData,
+        agentId: agentData?.agent_id,
+        createTs: agentData?.create_ts ?? Math.floor(Date.now() / 1000),
+      });
       setShowConversation(true);
     } catch (err) {
       setError('Failed to start call. Please try again.');
@@ -163,6 +167,25 @@ export function CallInterface({ onReturnToDashboard }: CallInterfaceProps) {
     },
     [agoraData],
   );
+
+  const handleSaveTranscript = async (messages: import('@/types').TranscriptEntry[]) => {
+    if (!agoraData?.channel) return;
+    try {
+      await fetch('/api/transcripts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: agoraData.channel,
+          agent_id: agoraData.agentId ?? '',
+          channel: agoraData.channel,
+          start_ts: (agoraData.createTs ?? Math.floor(Date.now() / 1000)) * 1000,
+          messages,
+        }),
+      });
+    } catch (error) {
+      console.error('Error saving transcript:', error);
+    }
+  };
 
   const handleEndConversation = async () => {
     if (agoraData?.agentId) {
@@ -246,6 +269,7 @@ export function CallInterface({ onReturnToDashboard }: CallInterfaceProps) {
                   rtmClient={rtmClient}
                   onTokenWillExpire={handleTokenWillExpire}
                   onEndConversation={handleEndConversation}
+                  onTranscriptUpdate={handleSaveTranscript}
                 />
               </AgoraProvider>
             </>

@@ -75,6 +75,7 @@ export interface AgoraTokenData {
   uid: string;
   channel: string;
   agentId?: string;
+  createTs?: number;
 }
 
 export interface AgentResponse {
@@ -107,6 +108,23 @@ export interface ConversationComponentProps {
   rtmClient: import('agora-rtm').RTMClient;
   onTokenWillExpire: (uid: string) => Promise<AgoraRenewalTokens>;
   onEndConversation: () => void;
+  onTranscriptUpdate?: (messages: TranscriptEntry[]) => void;
+}
+
+export interface TranscriptEntry {
+  turn_id: string;
+  uid: string;
+  text: string;
+  createdAt?: number;
+}
+
+export interface TranscriptSession {
+  session_id: string;
+  agent_id: string;
+  channel: string;
+  start_ts: number;
+  end_ts: number;
+  messages: TranscriptEntry[];
 }
 
 export interface WebhookEvent {
