@@ -269,7 +269,7 @@ export default function ConversationComponent({
       } catch {}
     }
     onEndConversation();
-  }, [client, localMicrophoneTrack, onEndConversation, onTranscriptUpdate, transcript, currentInProgressMessage]);
+  }, [client, localMicrophoneTrack, onEndConversation, onTranscriptUpdate, transcript]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

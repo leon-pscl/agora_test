@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import type { RentalUnit, FAQ } from '@/types';
+import type { RentalUnit } from '@/types';
 import { Button } from '@/components/ui/button';
 
 const SUGGESTED_QUESTIONS = [
@@ -146,7 +146,6 @@ const INITIAL_UNITS: RentalUnit[] = [
 export function UnitKnowledgeBaseEditor({ landlordId }: { landlordId: string }) {
   const [units, setUnits] = useState<RentalUnit[]>(INITIAL_UNITS);
   const [selectedUnit, setSelectedUnit] = useState(0);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch(`/api/landlords/${landlordId}`)
@@ -156,8 +155,7 @@ export function UnitKnowledgeBaseEditor({ landlordId }: { landlordId: string }) 
           setUnits(data.units);
         }
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {});
   }, [landlordId]);
 
   const updateUnit = useCallback(
