@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-file:./data/rental-voice.db}
+    volumes:
+      - sqlite_data:/app/prisma/data
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
