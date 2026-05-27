@@ -138,6 +138,16 @@ Open [http://localhost:3000](http://localhost:3000). Demo logins: `admin` / `adm
 | Database | Stored in Docker volume `rental-voice-agent-sqlite` |
 | First start | Runs `prisma db push` and seed automatically |
 
+### Deploy to Vercel
+
+**Option A (dashboard):** Settings → **Build and Deployment** (not General) → scroll to **Root Directory** → set `sample_project` → Save.
+
+**Option B (no UI field):** Use the repo-root `vercel.json`, which runs install/build inside `sample_project` (works when deploying `main`).
+
+1. **Production Branch**: `hana` or `main`.
+2. **Node.js**: 22. Add env vars from `.env.local.example` (including Neon `DATABASE_URL`).
+3. Redeploy after changing env vars or `NEXT_PUBLIC_*` values.
+
 ## Agent Pipeline
 
 The voice agent handles five stages:
