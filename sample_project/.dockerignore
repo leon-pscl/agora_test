@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.docker.example
+data
+prisma/dev.db
+prisma/*.db
+*.tsbuildinfo
+coverage
+.DS_Store
+README.md
+AGENTS.md
+PRD_RentalVoiceAgent_Agora.md

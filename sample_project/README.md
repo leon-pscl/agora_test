@@ -108,6 +108,36 @@ pnpm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see the landlord dashboard.
 
+### Docker (other devices)
+
+The app runs in Docker with a persistent SQLite volume. Agora, OpenAI, and other cloud APIs are still configured via your `.env` file (they are not bundled in the image).
+
+From `sample_project/`:
+
+```bash
+cp .env.docker.example .env
+# Edit .env with your Agora and optional API keys
+
+docker compose up --build
+```
+
+From the repo root (`agora_test/`):
+
+```bash
+cp sample_project/.env.docker.example sample_project/.env
+# Edit sample_project/.env
+
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000). Demo logins: `admin` / `admin123`, `user` / `user123`.
+
+| Item | Notes |
+|------|--------|
+| Port | Override with `APP_PORT=3001` if 3000 is taken |
+| Database | Stored in Docker volume `rental-voice-agent-sqlite` |
+| First start | Runs `prisma db push` and seed automatically |
+
 ## Agent Pipeline
 
 The voice agent handles five stages:

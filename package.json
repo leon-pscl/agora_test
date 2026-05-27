@@ -1,0 +1,14 @@
+{
+  "name": "agora_test",
+  "private": true,
+  "description": "Repo root — app lives in sample_project/",
+  "scripts": {
+    "dev": "pnpm --dir sample_project dev",
+    "build": "pnpm --dir sample_project build",
+    "start": "pnpm --dir sample_project start",
+    "lint": "pnpm --dir sample_project lint",
+    "typecheck": "pnpm --dir sample_project typecheck",
+    "verify": "pnpm --dir sample_project verify",
+    "install:app": "pnpm --dir sample_project install"
+  }
+}
