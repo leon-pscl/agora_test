@@ -1,5 +1,8 @@
 node_modules/
 .next/
+.env
 .env*.local
+prisma/dev.db
+dev.db
 *.tsbuildinfo
 next-env.d.ts

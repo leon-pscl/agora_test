@@ -1,26 +1,14 @@
-'use client';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { SESSION_COOKIE, verifySessionToken } from '@/lib/auth';
 
-import { useState } from 'react';
-import { LandlordDashboard } from '@/components/LandlordDashboard';
-import { CallInterface } from '@/components/CallInterface';
+export default async function Home() {
+  const cookieStore = await cookies();
+  const session = verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
 
-type ViewMode = 'dashboard' | 'call';
-
-export default function Home() {
-  const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
-
-  if (viewMode === 'call') {
-    return (
-      <CallInterface
-        onReturnToDashboard={() => setViewMode('dashboard')}
-      />
-    );
+  if (!session) {
+    redirect('/login');
   }
 
-  return (
-    <LandlordDashboard
-      landlordId={process.env.NEXT_PUBLIC_LANDLORD_ID ?? 'default-landlord'}
-      onTestCall={() => setViewMode('call')}
-    />
-  );
+  redirect(session.role === 'admin' ? '/dashboard' : '/call');
 }

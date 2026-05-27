@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.git/
+.env
+.env.local
+.env.production
+*.tsbuildinfo
+.nexttrace
+pnpm-lock.yaml
+README.md
+AGENTS.md
+tsconfig.tsbuildinfo
