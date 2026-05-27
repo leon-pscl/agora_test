@@ -138,6 +138,7 @@ export default function ConversationComponent({
           rtmConfig: { rtmEngine: rtmClient },
           renderMode: TranscriptHelperMode.TEXT,
           enableLog: true,
+          enableAgoraMetrics: false,
         });
 
         if (cancelled) {

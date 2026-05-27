@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import type { RentalUnit, FAQ } from '@/types';
+import type { RentalUnit } from '@/types';
 import { Button } from '@/components/ui/button';
 
 const SUGGESTED_QUESTIONS = [
@@ -189,6 +189,19 @@ export function UnitKnowledgeBaseEditor({ landlordId }: { landlordId: string }) 
     ]);
   }, []);
 
+  const deleteSelectedUnit = useCallback(() => {
+    const target = units[selectedUnit];
+    if (!target) return;
+
+    const label = target.name.trim() || `Unit ${selectedUnit + 1}`;
+    if (!window.confirm(`Delete "${label}"? Click Save All to persist this change.`)) {
+      return;
+    }
+
+    setUnits((prev) => prev.filter((_, index) => index !== selectedUnit));
+    setSelectedUnit((current) => Math.max(0, Math.min(current, units.length - 2)));
+  }, [selectedUnit, units]);
+
   const saveLandlord = useCallback(async () => {
     await fetch(`/api/landlords/${landlordId}`, {
       method: 'PUT',
@@ -205,13 +218,30 @@ export function UnitKnowledgeBaseEditor({ landlordId }: { landlordId: string }) 
 
   const unit = units[selectedUnit];
 
+  if (loading) {
+    return <p className="text-sm text-muted-foreground">Loading room info...</p>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Units & Knowledge Base</h2>
+        <div>
+          <h2 className="text-lg font-semibold">Room Info</h2>
+          <p className="text-sm text-muted-foreground">
+            Edit vacancy status, payment terms, pet rules, and tenant requirements.
+          </p>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={addUnit}>
             Add Unit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={deleteSelectedUnit}
+            disabled={units.length === 0}
+          >
+            Delete Room
           </Button>
           <Button size="sm" onClick={saveLandlord}>
             Save All
@@ -281,6 +311,22 @@ export function UnitKnowledgeBaseEditor({ landlordId }: { landlordId: string }) 
               />
             </div>
             <div>
+              <label className="text-xs font-medium">Vacancy Status</label>
+              <select
+                value={unit.availability}
+                onChange={(e) =>
+                  updateUnit(selectedUnit, {
+                    availability: e.target.value as RentalUnit['availability'],
+                  })
+                }
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="available">Vacant</option>
+                <option value="reserved">Reserved</option>
+                <option value="occupied">Occupied</option>
+              </select>
+            </div>
+            <div>
               <label className="text-xs font-medium">Address</label>
               <input
                 type="text"
@@ -325,7 +371,7 @@ export function UnitKnowledgeBaseEditor({ landlordId }: { landlordId: string }) 
             {/* Requirements */}
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">
-                Move-in Requirements
+                Payment Terms & Move-in Requirements
               </h3>
               {unit.requirements.map((req, i) => (
                 <div key={i} className="mt-2 flex gap-2">

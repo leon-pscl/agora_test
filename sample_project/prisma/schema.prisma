@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Landlord {
+  id            String            @id
+  ttsVoice      String
+  agentName     String
+  handoffPhone  String
+  units         Unit[]
+  chunks        KnowledgeChunk[]
+  schedules     ScheduleEvent[]
+  conversations ConversationLog[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model Unit {
+  id           String   @id @default(cuid())
+  unitId       String
+  landlordId   String
+  landlord     Landlord @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  name         String
+  type         String
+  price        Int
+  availability String
+  address      String
+  maxOccupants Int
+  petsAllowed  Boolean
+  faqs         String
+  requirements String
+  rules        String
+  viewingSlots String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([landlordId, unitId])
+  @@index([landlordId])
+}
+
+model KnowledgeChunk {
+  id         String   @id @default(cuid())
+  landlordId String
+  landlord   Landlord @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  unitId     String?
+  chunkType  String
+  content    String
+  embedding  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([landlordId, unitId])
+}
+
+model ScheduleEvent {
+  id            String   @id @default(cuid())
+  landlordId    String
+  landlord      Landlord @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  unitId        String?
+  type          String
+  title         String
+  tenantName    String?
+  tenantContact String?
+  startsAt      DateTime
+  endsAt        DateTime
+  status        String
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([landlordId, startsAt])
+  @@index([landlordId, unitId])
+}
+
+model ConversationLog {
+  id         String                @id @default(cuid())
+  sessionId  String                @unique
+  landlordId String
+  landlord   Landlord              @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  unitId     String?
+  scheduleId String?
+  source     String
+  agentId    String?
+  channel    String?
+  startTs    DateTime
+  endTs      DateTime
+  messages   ConversationMessage[]
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  @@index([landlordId, endTs])
+  @@index([landlordId, unitId])
+}
+
+model ConversationMessage {
+  id             String          @id @default(cuid())
+  conversationId String
+  conversation   ConversationLog @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  turnId         String
+  role           String
+  uid            String?
+  text           String
+  createdAt      DateTime
+
+  @@index([conversationId, createdAt])
+}

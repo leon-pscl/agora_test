@@ -3,24 +3,29 @@
 import { useState, useEffect } from 'react';
 import type { TranscriptSession } from '@/types';
 
-export function TranscriptViewer({ landlordId: _landlordId }: { landlordId: string }) {
+export function TranscriptViewer({ landlordId }: { landlordId: string }) {
   const [sessions, setSessions] = useState<TranscriptSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/transcripts')
+    fetch(`/api/transcripts?landlord_id=${landlordId}`)
       .then((res) => res.json())
       .then((data) => {
         setSessions(data.sessions ?? []);
       })
       .catch((err) => console.error('Error fetching transcripts:', err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [landlordId]);
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Call Transcripts</h2>
+      <div>
+        <h2 className="text-lg font-semibold">Call Logs</h2>
+        <p className="text-sm text-muted-foreground">
+          Voice transcripts and typed fallback chats saved for review.
+        </p>
+      </div>
 
       {loading ? (
         <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border">
@@ -29,8 +34,8 @@ export function TranscriptViewer({ landlordId: _landlordId }: { landlordId: stri
       ) : sessions.length === 0 ? (
         <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border">
           <p className="text-sm text-muted-foreground">
-            No call transcripts yet. Recordings and transcripts will appear
-            here after calls are completed.
+            No call logs yet. Voice and typed conversations will appear here
+            after tenants talk to the assistant.
           </p>
         </div>
       ) : (
@@ -53,11 +58,12 @@ export function TranscriptViewer({ landlordId: _landlordId }: { landlordId: stri
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <span className="text-sm font-medium">
-                      Call {new Date(session.start_ts).toLocaleString()}
+                      {session.source === 'text_fallback' ? 'Text chat' : 'Voice call'}{' '}
+                      {new Date(session.start_ts).toLocaleString()}
                     </span>
                     <p className="text-xs text-muted-foreground">
                       {session.messages.length} messages &middot;{' '}
-                      {Math.round((session.end_ts - session.start_ts) / 1000)}s
+                      {Math.max(0, Math.round((session.end_ts - session.start_ts) / 1000))}s
                       {session.agent_id ? ` &middot; Agent: ${session.agent_id.slice(0, 8)}...` : ''}
                     </p>
                   </div>

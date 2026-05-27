@@ -8,6 +8,20 @@ export interface ViewingSlot {
   available: boolean;
 }
 
+export interface ScheduleEvent {
+  id: string;
+  landlord_id: string;
+  unit_id: string | null;
+  type: 'viewing' | 'special_call';
+  title: string;
+  tenant_name: string | null;
+  tenant_contact: string | null;
+  starts_at: string;
+  ends_at: string;
+  status: 'available' | 'scheduled' | 'completed' | 'cancelled';
+  notes: string | null;
+}
+
 export interface RentalUnit {
   unit_id: string;
   name: string;
@@ -124,7 +138,17 @@ export interface TranscriptSession {
   channel: string;
   start_ts: number;
   end_ts: number;
+  source?: 'voice' | 'text_fallback';
+  unit_id?: string | null;
   messages: TranscriptEntry[];
+}
+
+export interface BookingExtractionResult {
+  booking_created: boolean;
+  schedule_event_id?: string;
+  unit_id?: string;
+  starts_at?: string;
+  reason?: string;
 }
 
 export interface WebhookEvent {

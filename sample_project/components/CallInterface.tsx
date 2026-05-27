@@ -10,6 +10,7 @@ import type {
   AgoraRenewalTokens,
 } from '@/types';
 import { Button } from '@/components/ui/button';
+import { TextFallbackChat } from './TextFallbackChat';
 
 const ConversationComponent = dynamic(
   () => import('./ConversationComponent'),
@@ -55,9 +56,16 @@ const AgoraProvider = dynamic(
 
 type CallInterfaceProps = {
   onReturnToDashboard: () => void;
+  showDashboardLink?: boolean;
+  onLogout?: () => void;
 };
 
-export function CallInterface({ onReturnToDashboard }: CallInterfaceProps) {
+export function CallInterface({
+  onReturnToDashboard,
+  showDashboardLink = false,
+  onLogout,
+}: CallInterfaceProps) {
+  const landlordId = process.env.NEXT_PUBLIC_LANDLORD_ID ?? 'default-landlord';
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [agoraData, setAgoraData] = useState<AgoraTokenData | null>(null);
@@ -92,7 +100,7 @@ export function CallInterface({ onReturnToDashboard }: CallInterfaceProps) {
           body: JSON.stringify({
             requester_id: responseData.uid,
             channel_name: responseData.channel,
-            landlord_id: process.env.NEXT_PUBLIC_LANDLORD_ID,
+            landlord_id: landlordId,
           } as ClientStartRequest & { landlord_id?: string }),
         })
           .then(async (res) => {
@@ -171,17 +179,23 @@ export function CallInterface({ onReturnToDashboard }: CallInterfaceProps) {
   const handleSaveTranscript = async (messages: import('@/types').TranscriptEntry[]) => {
     if (!agoraData?.channel) return;
     try {
-      await fetch('/api/transcripts', {
+      const res = await fetch('/api/transcripts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           session_id: agoraData.channel,
           agent_id: agoraData.agentId ?? '',
           channel: agoraData.channel,
+          landlord_id: landlordId,
+          source: 'voice',
           start_ts: (agoraData.createTs ?? Math.floor(Date.now() / 1000)) * 1000,
           messages,
         }),
       });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        console.error('Error saving transcript:', data.error ?? res.status);
+      }
     } catch (error) {
       console.error('Error saving transcript:', error);
     }
@@ -224,7 +238,7 @@ export function CallInterface({ onReturnToDashboard }: CallInterfaceProps) {
           }`}
         >
           {!showConversation ? (
-            <div className="animate-fade-up flex flex-col items-center gap-8">
+            <div className="animate-fade-up flex w-full flex-col items-center gap-8">
               <div className="space-y-2 text-center">
                 <h1 className="text-3xl font-bold tracking-tight">
                   Rental Voice Agent
@@ -247,14 +261,30 @@ export function CallInterface({ onReturnToDashboard }: CallInterfaceProps) {
                 <p className="text-sm text-destructive">{error}</p>
               )}
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onReturnToDashboard}
-                className="text-muted-foreground"
-              >
-                Back to Dashboard
-              </Button>
+              <div className="flex flex-col gap-2">
+                {showDashboardLink && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onReturnToDashboard}
+                    className="text-muted-foreground"
+                  >
+                    Back to Dashboard
+                  </Button>
+                )}
+                {onLogout && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onLogout}
+                    className="text-muted-foreground"
+                  >
+                    Logout
+                  </Button>
+                )}
+              </div>
+
+              <TextFallbackChat landlordId={landlordId} />
             </div>
           ) : agoraData && rtmClient ? (
             <>
