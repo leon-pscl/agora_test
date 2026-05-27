@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+<<<<<<< HEAD
     container_name: rental-voice-agent
     ports:
       - "${APP_PORT:-3000}:3000"
@@ -33,3 +34,17 @@ services:
 volumes:
   sqlite_data:
     name: rental-voice-agent-sqlite
+=======
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-file:./data/rental-voice.db}
+    volumes:
+      - sqlite_data:/app/prisma/data
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
+>>>>>>> 45077aaa4ff12f0467d6be1e41fb81f8f29e8fdf

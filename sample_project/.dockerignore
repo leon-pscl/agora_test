@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 node_modules
 .next
 .git
@@ -13,3 +14,17 @@ coverage
 README.md
 AGENTS.md
 PRD_RentalVoiceAgent_Agora.md
+=======
+node_modules/
+.next/
+.git/
+.env
+.env.local
+.env.production
+*.tsbuildinfo
+.nexttrace
+pnpm-lock.yaml
+README.md
+AGENTS.md
+tsconfig.tsbuildinfo
+>>>>>>> 45077aaa4ff12f0467d6be1e41fb81f8f29e8fdf
